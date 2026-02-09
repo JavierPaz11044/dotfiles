@@ -1,7 +1,7 @@
 return {
 
 	-------------------------------------------------
-
+	-- Mason
 	-------------------------------------------------
 	{
 		"williamboman/mason.nvim",
@@ -10,7 +10,7 @@ return {
 	},
 
 	-------------------------------------------------
-
+	-- Mason LSP bridge
 	-------------------------------------------------
 	{
 		"williamboman/mason-lspconfig.nvim",
@@ -29,7 +29,7 @@ return {
 	},
 
 	-------------------------------------------------
-
+	-- LSP (API moderna)
 	-------------------------------------------------
 	{
 		"neovim/nvim-lspconfig",
@@ -48,6 +48,7 @@ return {
 				"jdtls",
 			}
 
+			-- ✅ NUEVA API
 			for _, server in ipairs(servers) do
 				vim.lsp.config(server, {
 					capabilities = capabilities,
