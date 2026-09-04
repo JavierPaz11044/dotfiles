@@ -27,7 +27,7 @@ link_path() {
 echo "Installing from $ROOT"
 
 # Top-level XDG configs
-for name in bspwm sxhkd polybar kitty picom dunst rofi wireplumber flameshot; do
+for name in bspwm sxhkd polybar kitty picom dunst rofi wireplumber flameshot eww; do
   if [[ -d "$ROOT/.config/$name" ]]; then
     link_path "$ROOT/.config/$name" "$HOME/.config/$name"
   fi
