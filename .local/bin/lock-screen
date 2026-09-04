@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Lock screen: pixelated wallpaper + i3lock-color ring with clock inside.
+# Status feedback via ring/inside colors (green verify, red wrong) — no text.
+
+set -uo pipefail
+
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-${HOME}/.Xauthority}"
+
+IMAGE="$(mktemp --suffix=.png)"
+trap 'rm -f "$IMAGE"' EXIT
+
+FONT="JetBrains Mono"
+if ! fc-match "$FONT" >/dev/null 2>&1; then
+  FONT="Noto Sans"
+fi
+
+LOCK_BIN=""
+
+if command -v i3lock-color >/dev/null 2>&1; then
+  LOCK_BIN=i3lock-color
+elif i3lock --version 2>&1 | grep -qi color; then
+  LOCK_BIN=i3lock
+fi
+
+compose_pixel_background() {
+  if command -v maim >/dev/null 2>&1; then
+    maim -u "$IMAGE"
+  else
+    import -window root "$IMAGE"
+  fi
+
+  convert "$IMAGE" -scale 10% -scale 1000% "$IMAGE"
+  convert "$IMAGE" -fill '#1e1e2e45' -colorize 28% "$IMAGE"
+}
+
+lock_with_color() {
+  compose_pixel_background
+
+  "$LOCK_BIN" \
+    -i "$IMAGE" \
+    --ignore-empty-password \
+    --indicator \
+    --clock \
+    --no-modkey-text \
+    --time-str='%H:%M' \
+    --date-str='%d %b' \
+    --time-font="$FONT" \
+    --date-font="$FONT" \
+    --time-size=40 \
+    --date-size=12 \
+    --time-align=0 \
+    --date-align=0 \
+    --time-color=cdd6f4 \
+    --date-color=a6adc8 \
+    --ring-color=89b4fa \
+    --keyhl-color=cba6f7 \
+    --bshl-color=f38ba8 \
+    --inside-color=1e1e2eaa \
+    --insidever-color=a6e3a155 \
+    --insidewrong-color=f38ba866 \
+    --ringver-color=a6e3a1 \
+    --ringwrong-color=f38ba8 \
+    --verif-color=00000000 \
+    --wrong-color=00000000 \
+    --layout-color=00000000 \
+    --modif-color=00000000 \
+    --line-color=00000000 \
+    --separator-color=00000000 \
+    --radius=112 \
+    --ring-width=10 \
+    --ind-pos='x+(w/2):y+(h/2)+12' \
+    --time-pos='ix:iy-12' \
+    --date-pos='ix:iy+20' \
+    --verif-text='' \
+    --wrong-text='' \
+    --noinput-text='' \
+    --lock-text='' \
+    --lockfailed-text='' \
+    --greeter-text='' \
+    -n
+}
+
+lock_with_fancy() {
+  exec i3lock-fancy -p
+}
+
+lock_basic() {
+  exec i3lock -c 1e1e2e -b -f -n
+}
+
+if [[ -n "$LOCK_BIN" ]]; then
+  lock_with_color && exit 0
+fi
+
+if command -v i3lock-fancy >/dev/null 2>&1; then
+  lock_with_fancy
+fi
+
+if command -v i3lock >/dev/null 2>&1; then
+  lock_basic
+fi
+
+echo "lock-screen: no lock tool available" >&2
+exit 1

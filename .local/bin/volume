@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Volume control for PipeWire (wpctl, pactl fallback)
+# Usage: volume up | down | mute
+
+set -euo pipefail
+
+DIR="$HOME/.config/dunst"
+SINK="@DEFAULT_AUDIO_SINK@"
+MAX="1.0"
+
+get_volume() {
+  local line raw
+  if command -v wpctl >/dev/null 2>&1; then
+    line="$(wpctl get-volume "$SINK" 2>/dev/null || true)"
+    raw="$(printf '%s\n' "$line" | awk '{ print $2 }')"
+    if [[ -n "$raw" ]]; then
+      awk -v v="$raw" 'BEGIN { printf "%d", (v * 100) + 0.5 }'
+      return
+    fi
+  fi
+  pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null \
+    | grep -oE '[0-9]+%' \
+    | head -n1 \
+    | tr -d '%'
+}
+
+is_mute() {
+  if command -v wpctl >/dev/null 2>&1; then
+    wpctl get-volume "$SINK" 2>/dev/null | grep -q MUTED && return 0
+    return 1
+  fi
+  pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | grep -q 'yes'
+}
+
+adjust() {
+  local dir=$1
+  if command -v wpctl >/dev/null 2>&1; then
+    wpctl set-mute "$SINK" 0
+    if [[ "$dir" == up ]]; then
+      wpctl set-volume -l "$MAX" "$SINK" 5%+
+    else
+      wpctl set-volume "$SINK" 5%-
+    fi
+    return
+  fi
+  pactl set-sink-mute @DEFAULT_SINK@ 0
+  if [[ "$dir" == up ]]; then
+    pactl set-sink-volume @DEFAULT_SINK@ +5%
+  else
+    pactl set-sink-volume @DEFAULT_SINK@ -5%
+  fi
+}
+
+toggle_mute() {
+  if command -v wpctl >/dev/null 2>&1; then
+    wpctl set-mute "$SINK" toggle
+    return
+  fi
+  pactl set-sink-mute @DEFAULT_SINK@ toggle
+}
+
+send_notification() {
+  local volume icon_name
+  volume="$(get_volume)"
+  volume="${volume:-0}"
+
+  if [ "$volume" -eq 0 ] || is_mute; then
+    icon_name="$DIR/icons/volume-muted.svg"
+  elif [ "$volume" -lt 30 ]; then
+    icon_name="$DIR/icons/volume-low.svg"
+  elif [ "$volume" -lt 70 ]; then
+    icon_name="$DIR/icons/volume-medium.svg"
+  else
+    icon_name="$DIR/icons/volume-high.svg"
+  fi
+
+  if ! command -v dunstify >/dev/null 2>&1; then
+    return
+  fi
+
+  if is_mute; then
+    dunstify "Mute" -i "$icon_name" -r 5555 -u normal -h int:value:0
+  else
+    dunstify "Volume ${volume}%" -i "$icon_name" -r 5555 -u normal -h int:value:"$volume"
+  fi
+}
+
+case "${1:-}" in
+  up)
+    adjust up
+    send_notification
+    ;;
+  down)
+    adjust down
+    send_notification
+    ;;
+  mute)
+    toggle_mute
+    send_notification
+    ;;
+  *)
+    echo "Usage: $0 {up|down|mute}" >&2
+    exit 1
+    ;;
+esac

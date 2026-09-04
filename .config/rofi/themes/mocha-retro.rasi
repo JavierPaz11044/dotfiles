@@ -1,0 +1,125 @@
+/* Catppuccin Mocha — retro pill style (EWW bar companion) */
+
+* {
+    background-color: transparent;
+    text-color: #cdd6f4;
+    border-color: #89b4fa99;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 560px;
+    x-offset: 0px;
+    y-offset: 0px;
+    enabled: true;
+    border: 2px;
+    border-radius: 8px;
+    border-color: #89b4fa99;
+    cursor: "default";
+    background-color: #1e1e2eee;
+}
+
+mainbox {
+    children: [ inputbar, listview, mode-switcher ];
+    spacing: 0;
+}
+
+inputbar {
+    children: [ prompt, entry ];
+    background-color: #181825ee;
+    border-radius: 6px 6px 0 0;
+    padding: 12px 14px;
+    spacing: 8px;
+}
+
+prompt {
+    enabled: true;
+    padding: 0 4px 0 0;
+    background-color: transparent;
+    text-color: #89b4fa;
+    font: "JetBrainsMono Nerd Font 14";
+}
+
+entry {
+    placeholder: "type to search...";
+    placeholder-color: #6c7086;
+    background-color: transparent;
+    text-color: #cdd6f4;
+    font: "Comic Mono 13";
+    cursor: text;
+}
+
+listview {
+    columns: 1;
+    lines: 8;
+    spacing: 4px;
+    cycle: true;
+    dynamic: true;
+    scrollbar: false;
+    layout: vertical;
+    fixed-height: 288px;
+    padding: 8px 10px 6px 10px;
+    background-color: #1e1e2eee;
+}
+
+element {
+    padding: 6px 10px;
+    spacing: 10px;
+    border-radius: 6px;
+    background-color: transparent;
+    text-color: #bac2de;
+    cursor: pointer;
+}
+
+element selected {
+    background-color: #89b4fa;
+    text-color: #1e1e2e;
+}
+
+element-icon {
+    size: 20px;
+    cursor: inherit;
+}
+
+element-text {
+    font: "Comic Mono 12";
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+    cursor: inherit;
+}
+
+mode-switcher {
+    spacing: 4px;
+    background-color: #181825ee;
+    padding: 6px 10px 8px 10px;
+    border-radius: 0 0 6px 6px;
+}
+
+button {
+    padding: 4px 12px;
+    border-radius: 4px;
+    background-color: transparent;
+    text-color: #a6adc8;
+    font: "Comic Mono 11";
+    cursor: pointer;
+}
+
+button selected {
+    background-color: #313244;
+    text-color: #89b4fa;
+}
+
+message {
+    background-color: #181825ee;
+    border: 0;
+    padding: 8px;
+}
+
+textbox {
+    font: "Comic Mono 11";
+    text-color: #f9e2af;
+}

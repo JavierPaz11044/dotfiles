@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Region select + annotate (arrows/text) + copy final image to clipboard
+exec flameshot gui --clipboard --path "$(xdg-user-dir PICTURES)/Screenshots"

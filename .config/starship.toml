@@ -1,0 +1,184 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = false
+command_timeout = 500
+scan_timeout = 10
+
+format = """
+[╭─](bold #585b70)$username$hostname$directory$git_branch$git_status$git_state$git_metrics$docker_context$package$nodejs$python$rust$golang$java$nix_shell$conda$memory_usage$cmd_duration$jobs
+[╰─](bold #585b70)$character"""
+
+right_format = "$time"
+
+palette = "catppuccin_mocha"
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo  = "#f2cdcd"
+pink      = "#f5c2e7"
+mauve     = "#cba6f7"
+red       = "#f38ba8"
+maroon    = "#eba0ac"
+peach     = "#fab387"
+yellow    = "#f9e2af"
+green     = "#a6e3a1"
+teal      = "#94e2d5"
+sky       = "#89dceb"
+sapphire  = "#74c7ec"
+blue      = "#89b4fa"
+lavender  = "#b4befe"
+text      = "#cdd6f4"
+subtext1  = "#bac2de"
+subtext0  = "#a6adc8"
+overlay2  = "#9399b2"
+overlay1  = "#7f849c"
+overlay0  = "#6c7086"
+surface2  = "#585b70"
+surface1  = "#45475a"
+surface0  = "#313244"
+base      = "#1e1e2e"
+mantle    = "#181825"
+crust     = "#11111b"
+
+[username]
+show_always = true
+style_user = "bold mauve"
+style_root = "bold red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold lavender"
+format = "[@$hostname]($style) "
+
+[directory]
+style = "bold blue"
+format = "[$path]($style)[$read_only]($read_only_style) "
+read_only = "  "
+read_only_style = "red"
+truncation_length = 4
+truncate_to_repo = true
+home_symbol = "~"
+
+[git_branch]
+symbol = " "
+style = "bold mauve"
+format = "on [$symbol$branch(:$remote_branch)]($style) "
+
+[git_status]
+style = "bold yellow"
+format = "[$all_status$ahead_behind]($style) "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕ "
+conflicted = " "
+up_to_date = ""
+untracked = "? "
+modified = "! "
+staged = "+ "
+renamed = "» "
+deleted = "✘ "
+stashed = "󰃨 "
+
+[git_state]
+style = "bold peach"
+format = "([$state( $progress_current/$progress_total)]($style)) "
+
+[git_metrics]
+format = "([+$added](blue)/[-$deleted](red)) "
+disabled = false
+
+[cmd_duration]
+min_time = 2_000
+style = "bold surface2"
+format = "took [$duration]($style) "
+
+[jobs]
+symbol = "+ "
+style = "bold red"
+number_threshold = 1
+format = "[$symbol$number]($style) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[package]
+disabled = true
+
+[nodejs]
+format = "via [$symbol($version )]($style)"
+symbol = " "
+style = "bold green"
+detect_files = ["package.json"]
+detect_folders = ["node_modules"]
+
+[python]
+format = "via [${symbol}${pyenv_prefix}(${version} )]($style)"
+symbol = " "
+style = "bold yellow"
+detect_files = ["requirements.txt", "pyproject.toml", "Pipfile", ".python-version"]
+
+[rust]
+format = "via [$symbol($version )]($style)"
+symbol = " "
+style = "bold peach"
+detect_files = ["Cargo.toml"]
+
+[golang]
+format = "via [$symbol($version )]($style)"
+symbol = " "
+style = "bold sky"
+detect_files = ["go.mod"]
+
+[java]
+format = "via [$symbol($version )]($style)"
+symbol = " "
+style = "bold red"
+detect_files = ["pom.xml", "build.gradle", "build.gradle.kts"]
+
+[docker_context]
+format = "via [$symbol$context]($style) "
+symbol = " "
+style = "bold blue"
+only_with_files = true
+
+[nix_shell]
+format = "via [$symbol$name]($style) "
+symbol = " "
+style = "bold blue"
+
+[conda]
+format = "via [$symbol$environment]($style) "
+symbol = " "
+style = "bold green"
+ignore_base = true
+
+[memory_usage]
+disabled = true
+threshold = 80
+format = "via $symbol[$ram]($style) "
+symbol = " "
+style = "bold red"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bold surface2"
+format = "[$time]($style)"
+
+[status]
+disabled = true
+
+[aws]
+disabled = true
+
+[terraform]
+disabled = true
+
+[helm]
+disabled = true
+
+[kubernetes]
+disabled = true

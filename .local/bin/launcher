@@ -1,0 +1,29 @@
+#!/bin/bash
+# Usage:
+#   launcher          → top (polybar menu)
+#   launcher center   → centered (keyboard Super+r / Super+Space)
+
+mode="${1:-top}"
+
+case "$mode" in
+  center)
+    # 0 = center of the screen
+    loc=0
+    xoff=0
+    yoff=0
+    ;;
+  *)
+    # 1 = north-west (under the menu pill)
+    loc=1
+    xoff=+75
+    yoff=+10
+    ;;
+esac
+
+rofi -no-lazy-grab \
+  -disable-history \
+  -modi "drun" -show drun \
+  -location "$loc" \
+  -font "Comic Mono 10" \
+  -theme ~/.config/rofi/launcher.rasi \
+  -xoffset "$xoff" -yoffset "$yoff"

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Screenshots with maim (bspwm / X11)
+# Modes:
+#   --now   full screen
+#   --area  select region
+#   --win   active window
+#   --in5 / --in10  delayed full screen
+
+set -euo pipefail
+
+time="$(date +%Y-%m-%d-%H-%M-%S)"
+dir="$(xdg-user-dir PICTURES)/Screenshots"
+file="Screenshot_${time}.png"
+path="${dir}/${file}"
+
+mkdir -p "$dir"
+
+notify_user() {
+  if [[ -f "$path" ]]; then
+    # also copy image to clipboard
+    xclip -selection clipboard -t image/png -i "$path" >/dev/null 2>&1 || true
+    if command -v dunstify >/dev/null 2>&1; then
+      dunstify -u low --replace=699 -i "$path" "Screenshot Saved" "$path"
+    else
+      notify-send -u low "Screenshot Saved" "$path"
+    fi
+  else
+    if command -v dunstify >/dev/null 2>&1; then
+      dunstify -u low --replace=699 "Screenshot Cancelled"
+    else
+      notify-send -u low "Screenshot Cancelled"
+    fi
+  fi
+}
+
+countdown() {
+  local sec
+  for sec in $(seq "$1" -1 1); do
+    if command -v dunstify >/dev/null 2>&1; then
+      dunstify -t 1000 --replace=699 "Taking shot in : $sec"
+    else
+      notify-send -t 1000 "Taking shot in : $sec"
+    fi
+    sleep 1
+  done
+}
+
+shotnow() {
+  maim -u -f png "$path"
+  notify_user
+}
+
+shotarea() {
+  # Flameshot overlay: dim rest of screen, keep selection bright,
+  # save as soon as the region is chosen (no editor).
+  if command -v flameshot >/dev/null 2>&1; then
+    flameshot gui --accept-on-select --clipboard --path "$path" || true
+    notify_user
+    return
+  fi
+
+  # Fallback if flameshot is missing: visible highlight + thicker border
+  maim -u -o -f png -s -l -b 4 -c 0.137,0.337,0.753,0.4 "$path" || true
+  notify_user
+}
+
+shotwin() {
+  maim -u -f png -i "$(xdotool getactivewindow)" "$path"
+  notify_user
+}
+
+shot5() {
+  countdown 5
+  sleep 0.2
+  shotnow
+}
+
+shot10() {
+  countdown 10
+  sleep 0.2
+  shotnow
+}
+
+case "${1:-}" in
+  --now) shotnow ;;
+  --area) shotarea ;;
+  --win) shotwin ;;
+  --in5) shot5 ;;
+  --in10) shot10 ;;
+  *)
+    echo "Available Options : --now --area --win --in5 --in10"
+    exit 1
+    ;;
+esac
+
+exit 0

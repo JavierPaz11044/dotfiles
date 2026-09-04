@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# Bluetooth audio helper for bspwm + PipeWire.
+#
+# Usage:
+#   bt-audio switch   set headphones as default output and move streams
+#   bt-audio watch    run in background; switch whenever a BT sink appears
+#   bt-audio status   show devices, sinks, default output
+#   bt-audio pair     pair + trust + connect a device (optional MAC)
+
+set -euo pipefail
+
+notify() {
+  local title=$1 body=${2:-}
+  if command -v dunstify >/dev/null 2>&1; then
+    dunstify -r 6991 -u low -a Bluetooth "$title" "$body"
+  elif command -v notify-send >/dev/null 2>&1; then
+    notify-send -u low -a Bluetooth "$title" "$body"
+  fi
+}
+
+bluez_cards() {
+  pactl list cards short 2>/dev/null | awk '$2 ~ /bluez/ { print $2 }'
+}
+
+bluez_a2dp_sink() {
+  pactl list short sinks 2>/dev/null | awk '$2 ~ /bluez/ { print $2; exit }'
+}
+
+set_a2dp_profile() {
+  local card profiles
+  while IFS= read -r card; do
+    [[ -n "$card" ]] || continue
+    profiles="$(pactl list cards 2>/dev/null | awk -v target="$card" '
+      $1 == "Name:" && $2 == target { found=1 }
+      found && $1 == "Name:" && $2 != target { exit }
+      found && /a2dp-sink/ { print; exit }
+    ')"
+    if [[ "$profiles" == *a2dp-sink-aac* ]]; then
+      pactl set-card-profile "$card" a2dp-sink-aac >/dev/null 2>&1 || true
+    elif [[ "$profiles" == *a2dp-sink* ]]; then
+      pactl set-card-profile "$card" a2dp-sink >/dev/null 2>&1 || true
+    fi
+  done < <(bluez_cards)
+}
+
+move_streams_to_sink() {
+  local sink=$1 id
+  while IFS= read -r id; do
+    [[ -n "$id" ]] || continue
+    pactl move-sink-input "$id" "$sink" >/dev/null 2>&1 || true
+  done < <(pactl list short sink-inputs 2>/dev/null | awk '{ print $1 }')
+}
+
+switch_to_bt() {
+  local sink desc
+  set_a2dp_profile
+  sleep 0.4
+  sink="$(bluez_a2dp_sink)"
+  [[ -n "$sink" ]] || return 1
+
+  pactl set-default-sink "$sink" >/dev/null
+  pactl set-sink-mute "$sink" 0 >/dev/null 2>&1 || true
+  move_streams_to_sink "$sink"
+
+  desc="$(pactl list sinks 2>/dev/null | awk -v s="$sink" '
+    $1 == "Name:" && $2 == s { found=1 }
+    found && $1 == "Description:" {
+      $1 = ""
+      sub(/^ +/, "")
+      print
+      exit
+    }
+  ')"
+  notify "Audio: headphones" "${desc:-Bluetooth}"
+  echo "Default sink: ${sink}"
+}
+
+watch_events() {
+  switch_to_bt >/dev/null 2>&1 || true
+  pactl subscribe 2>/dev/null | while IFS= read -r line; do
+    case "$line" in
+      *"new' on sink"*|*"new' on card"*|*"change' on card"*)
+        sleep 0.8
+        switch_to_bt >/dev/null 2>&1 || true
+        ;;
+    esac
+  done
+}
+
+pair_device() {
+  local mac=${1:-}
+  command -v bluetoothctl >/dev/null 2>&1 || {
+    echo "bluetoothctl not found" >&2
+    return 1
+  }
+
+  bluetoothctl power on >/dev/null 2>&1 || true
+  bluetoothctl agent on >/dev/null 2>&1 || true
+  bluetoothctl default-agent >/dev/null 2>&1 || true
+  bluetoothctl pairable on >/dev/null 2>&1 || true
+
+  if [[ -z "$mac" ]]; then
+    echo "Put the headphones in pairing mode, then run:"
+    echo "  bluetoothctl devices"
+    echo "  $0 pair AA:BB:CC:DD:EE:FF"
+    bluetoothctl --timeout 12 scan on || true
+    bluetoothctl scan off >/dev/null 2>&1 || true
+    bluetoothctl devices
+    return 0
+  fi
+
+  bluetoothctl --timeout 8 scan on >/dev/null 2>&1 || true
+  bluetoothctl scan off >/dev/null 2>&1 || true
+  bluetoothctl pair "$mac"
+  bluetoothctl trust "$mac"
+  bluetoothctl connect "$mac"
+  sleep 2
+  switch_to_bt || {
+    notify "Bluetooth" "Connected, waiting for audio profile..."
+    return 1
+  }
+}
+
+status() {
+  echo "=== Bluetooth ==="
+  bluetoothctl devices 2>/dev/null || true
+  echo
+  bluetoothctl devices Connected 2>/dev/null || true
+  echo
+  echo "=== Default sink ==="
+  pactl get-default-sink 2>/dev/null || true
+  echo
+  echo "=== Sinks ==="
+  pactl list short sinks 2>/dev/null || true
+  echo
+  echo "=== Cards ==="
+  pactl list cards short 2>/dev/null || true
+}
+
+case "${1:-}" in
+  switch) switch_to_bt ;;
+  watch) watch_events ;;
+  status) status ;;
+  pair) pair_device "${2:-}" ;;
+  *)
+    echo "Usage: $0 {switch|watch|status|pair [MAC]}" >&2
+    exit 1
+    ;;
+esac

@@ -1,0 +1,24 @@
+# Secrets / local state
+.env
+.env.*
+*.pem
+*.key
+credentials*
+*secret*
+*token*
+
+# OS / editor junk
+.DS_Store
+*~
+*.swp
+*.bak
+*.bak.*
+.cache/
+*.log
+
+# Nested git
+**/.git/
+
+# Large / generated
+node_modules/
+.local/share/

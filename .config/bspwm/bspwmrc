@@ -1,0 +1,89 @@
+#!/bin/sh
+# bspwm session: polybar navbar + nm-applet + dunst (+ eww popups on demand)
+
+export PATH="${PATH}:${HOME}/.local/bin:${HOME}/.config/bspwm/bin"
+
+# Xresources colors (optional)
+[ -f "${HOME}/.Xresources" ] && xrdb -merge "${HOME}/.Xresources"
+
+# Workspaces: 1-10 on single monitor; laptop=1, external=2-10 when dual
+monitors="$(bspc query -M --names)"
+count="$(printf '%s\n' "$monitors" | grep -c .)"
+if [ "$count" -gt 1 ]; then
+  primary="$(printf '%s\n' "$monitors" | grep -E '^(eDP|LVDS)' | head -n1)"
+  [ -z "$primary" ] && primary="$(printf '%s\n' "$monitors" | head -n1)"
+  external="$(printf '%s\n' "$monitors" | grep -vx "$primary" | head -n1)"
+  bspc monitor "$primary" -d 1
+  bspc monitor "$external" -d 2 3 4 5 6 7 8 9 10
+else
+  bspc monitor -d 1 2 3 4 5 6 7 8 9 10
+fi
+
+# Autostart
+pgrep -x sxhkd >/dev/null || sxhkd &
+pgrep -x picom >/dev/null || picom --config "${HOME}/.config/picom/picom.conf" &
+pgrep -x dunst >/dev/null || dunst --config "${HOME}/.config/dunst/dunstrc" &
+
+# Screen lock daemon (loginctl lock-session + idle lock)
+if command -v xss-lock >/dev/null && [ -x "${HOME}/.local/bin/lock-screen" ]; then
+  pgrep -f "xss-lock.*lock-screen" >/dev/null || \
+    xss-lock -- "${HOME}/.local/bin/lock-screen" &
+fi
+
+# Polkit (KDE agent already installed with Plasma)
+POLKIT="/usr/lib/x86_64-linux-gnu/libexec/polkit-kde-authentication-agent-1"
+if [ -x "$POLKIT" ] && ! pgrep -f polkit-kde-authentication-agent-1 >/dev/null; then
+  "$POLKIT" &
+fi
+
+# WiFi / NetworkManager tray (same NM stack as KDE)
+pgrep -x nm-applet >/dev/null || nm-applet &
+
+# Route audio to Bluetooth headphones when they appear
+BT_WATCH_PID="${XDG_RUNTIME_DIR:-/tmp}/bt-audio-watch.pid"
+if [ -x "${HOME}/.local/bin/bt-audio" ]; then
+  if [ ! -f "$BT_WATCH_PID" ] || ! kill -0 "$(cat "$BT_WATCH_PID")" 2>/dev/null; then
+    "${HOME}/.local/bin/bt-audio" watch &
+    echo $! > "$BT_WATCH_PID"
+  fi
+fi
+
+# Wallpaper
+if [ -d "${HOME}/.wallpaper" ]; then
+  img="$(find "${HOME}/.wallpaper" -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' -o -iname '*.webp' \) 2>/dev/null | shuf -n1)"
+fi
+if [ -z "$img" ] && [ -f "${HOME}/Pictures/Wallpapers/bg.png" ]; then
+  img="${HOME}/Pictures/Wallpapers/bg.png"
+fi
+[ -n "$img" ] && feh --no-fehbg --bg-fill "$img"
+
+xsetroot -cursor_name left_ptr
+
+# Polybar navbar (not eww)
+"${HOME}/.config/polybar/launch.sh" &
+
+# Window rules
+bspc rule -a kitty follow=on focus=on
+bspc rule -a firefox follow=on focus=on
+bspc rule -a Brave-browser follow=on focus=on
+bspc rule -a Code follow=on focus=on
+bspc rule -a cursor follow=on focus=on
+bspc rule -a Cursor follow=on focus=on
+bspc rule -a dolphin follow=on focus=on
+bspc rule -a mpv state=floating
+bspc rule -a feh state=floating
+bspc rule -a Rofi state=floating sticky=on
+bspc rule -a Pavucontrol state=floating
+bspc rule -a Nm-connection-editor state=floating
+
+# Layout
+bspc config border_width 2
+bspc config window_gap 10
+bspc config top_padding 42
+bspc config split_ratio 0.50
+bspc config borderless_monocle true
+bspc config gapless_monocle true
+bspc config focus_follows_pointer true
+bspc config normal_border_color "#313244"
+bspc config focused_border_color "#89B4FA"
+bspc config presel_feedback_color "#89B4FA"

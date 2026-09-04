@@ -1,0 +1,28 @@
+/* Rofi launcher — Catppuccin Mocha retro (matches EWW bar) */
+
+configuration {
+    modi: "drun,run,window";
+    show-icons: true;
+    terminal: "kitty";
+    drun-display-format: "{name}";
+    location: 0;
+    disable-history: false;
+    hide-scrollbar: true;
+    display-drun: " apps";
+    display-run: " run";
+    display-window: " win";
+    sidebar-mode: false;
+    font: "Comic Mono 12";
+    icon-theme: "Papirus-Dark";
+    threads: 0;
+    fixed-num-lines: true;
+    allow-bolding: false;
+    parse-hosts: false;
+    sort: true;
+    sorting-method: "fzf";
+    matching: "fuzzy";
+    case-sensitive: false;
+    click-to-exit: true;
+}
+
+@theme "themes/mocha-retro"
